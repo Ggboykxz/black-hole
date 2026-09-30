@@ -1,0 +1,29 @@
+{
+  "model_config": "configs/blackhole-small.json",
+  "train_data": "data/tokenized/train.bin",
+  "val_data": "data/tokenized/val.bin",
+  "tokenizer_path": "data/tokenizer.json",
+  "batch_size": 8,
+  "grad_accum_steps": 4,
+  "seq_len": 1024,
+  "max_steps": 12000,
+  "lr": 0.0003,
+  "min_lr": 3e-05,
+  "warmup_steps": 300,
+  "weight_decay": 0.1,
+  "beta1": 0.9,
+  "beta2": 0.95,
+  "grad_clip": 1.0,
+  "out_dir": "runs/blackhole-v2",
+  "seed": 1337,
+  "device": "cuda",
+  "dtype": "fp16",
+  "compile": true,
+  "log_every": 10,
+  "eval_every": 500,
+  "eval_iters": 20,
+  "save_every": 2000,
+  "extra": {
+    "init_from": "runs/blackhole-real/ckpt_final.pt"
+  }
+}
