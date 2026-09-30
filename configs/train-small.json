@@ -17,7 +17,7 @@
   "out_dir": "runs/blackhole-small",
   "seed": 1337,
   "device": "cuda",
-  "dtype": "bf16",
+  "dtype": "fp16",
   "compile": false,
   "log_every": 10,
   "eval_every": 250,
