@@ -185,12 +185,13 @@ def main(argv: list[str] | None = None) -> None:
 
         for micro in range(micro_total):
             x, y = batcher.next_train()
-            last = micro == micro_total - 1
             with autocast_ctx():
                 _, loss = model(x, y)
                 loss = loss / micro_total
             scaler.scale(loss).backward()
-            step_loss += float(loss.detach()) * micro_total
+            # `loss` is already divided by micro_total, so summing the scaled values
+            # across micro-steps yields the mean raw loss (do NOT re-multiply).
+            step_loss += float(loss.detach())
             tokens_seen += x.numel()
             throughput.update(x.numel())
 

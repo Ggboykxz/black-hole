@@ -42,3 +42,4 @@ hub_export/
 
 # bench outputs
 bench_*.json
+data/parquet/
