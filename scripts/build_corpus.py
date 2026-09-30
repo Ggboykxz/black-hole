@@ -116,7 +116,9 @@ def main(argv: list[str] | None = None) -> None:
     stats = dict(read=0, junk=0, lowscore=0, dup=0, kept=0)
 
     train_f = open(out / "train.txt", "w", encoding="utf-8")
-    val_f = open(out / "val.txt", "w", encoding="utf-8")
+    # only touch val.txt when we were asked to (re)write it, so a run can keep the
+    # previous validation split for run-to-run comparability
+    val_f = open(out / "val.txt", "w", encoding="utf-8") if args.val_chars > 0 else None
     val_written = 0
 
     for fp in files:
@@ -153,7 +155,7 @@ def main(argv: list[str] | None = None) -> None:
                 seen_exact.add(h)
 
                 stats["kept"] += 1
-                if val_written < args.val_chars:
+                if val_f is not None and val_written < args.val_chars:
                     val_f.write(text + "\n\n")
                     val_written += len(text)
                 else:
@@ -165,7 +167,8 @@ def main(argv: list[str] | None = None) -> None:
                       f"| {kept_chars/1e6:.0f}M chars ({kept_chars*0.25/1e6:.0f}M tok est)")
 
     train_f.close()
-    val_f.close()
+    if val_f is not None:
+        val_f.close()
 
     print("\n=== corpus ===")
     print(f"read      {stats['read']:>12,}")

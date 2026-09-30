@@ -67,6 +67,9 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--config", default="configs/blackhole-small.json")
     parser.add_argument("--max-steps", type=int, default=None, help="override config max_steps")
     parser.add_argument("--resume", default=None, help="checkpoint path to resume from")
+    parser.add_argument("--init-from", default=None,
+                        help="warm start: load MODEL WEIGHTS ONLY (fresh optimizer + LR schedule). "
+                             "Use when the data or schedule changes; use --resume to continue exactly.")
     parser.add_argument("--out-dir", default=None)
     parser.add_argument("--dry-run", action="store_true", help="build model, 1 step, exit")
     args = parser.parse_args(argv)
@@ -81,6 +84,8 @@ def main(argv: list[str] | None = None) -> None:
         train_cfg.out_dir = args.out_dir
     if args.resume:
         train_cfg.resume = args.resume
+    if args.init_from:
+        train_cfg.extra["init_from"] = args.init_from
     if args.dry_run:
         train_cfg.max_steps = 1
         train_cfg.eval_every = 10**9
@@ -105,9 +110,22 @@ def main(argv: list[str] | None = None) -> None:
 
     optimizer = build_optimizer(model, train_cfg)
 
-    # ---------------------------------------------------------------- resume
+    # ---------------------------------------------------------------- resume / warm start
     start_step = 0
-    if train_cfg.resume:
+    init_from = train_cfg.extra.get("init_from")
+    if init_from:
+        # weights only: the LR schedule and optimizer state start fresh, which is what
+        # you want when switching to a new/bigger corpus (a resumed cosine schedule
+        # would already be at min_lr and could not train further).
+        ckpt = load_checkpoint(init_from, map_location=device)
+        missing, unexpected = model.load_state_dict(ckpt["model"], strict=False)
+        if unexpected:
+            raise RuntimeError(f"unexpected keys in {init_from}: {unexpected}")
+        missing = [k for k in missing if not k.endswith("lm_head.weight")]  # tied
+        if missing:
+            raise RuntimeError(f"missing keys in {init_from}: {missing}")
+        log.info(f"warm start from {init_from} (weights only, fresh optimizer/schedule)")
+    elif train_cfg.resume:
         ckpt = load_checkpoint(train_cfg.resume, map_location=device)
         model.load_state_dict(ckpt["model"])
         if "optimizer" in ckpt:
@@ -147,8 +165,11 @@ def main(argv: list[str] | None = None) -> None:
             yield
 
     if train_cfg.compile:
+        # NB: mode='default', NOT 'reduce-overhead'. CUDA graphs break with gradient
+        # accumulation (several forwards per backward -> "tensor overwritten by a
+        # subsequent run"). 'default' still gives ~1.4x on this GPU.
         log.info("torch.compile enabled (first steps will be slow)")
-        model.forward = torch.compile(model.forward)  # type: ignore[method-assign]
+        model.forward = torch.compile(model.forward, mode="default")  # type: ignore[method-assign]
 
     # ---------------------------------------------------------------- wandb (optional)
     wandb_run = None
