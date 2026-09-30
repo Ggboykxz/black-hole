@@ -91,4 +91,4 @@ def test_train_smoke(tmp_path, corpus):
 
     x, y = get_batch(data, 2, 64, torch.device("cpu"), rng)
     _, loss2 = model(x, y)
-    assert np.isfinite(before) and np.isfinite(float(loss2))
+    assert np.isfinite(before) and np.isfinite(float(loss2.detach()))

@@ -18,6 +18,8 @@
 - [x] Data pipeline: text → `uint16` memmap → random blocks
 - [x] Training loop: AMP bf16, grad accum, cosine LR, AdamW (decoupled decay), ckpt/resume
 - [x] 17/17 tests green (causality, shapes, grads, RoPE, GQA, round-trip)
+- [x] HF Hub export (`Ggboykxz/black-hole-tiny`) incl. tied-weight safetensors handling
+- [x] 20/20 tests green (+ checkpoint & safetensors round-trip, generation determinism)
 - [ ] Scale up: more data, bigger config, longer run
 
 ## Notes / decisions
@@ -35,4 +37,9 @@
 | Run | Config | Steps | Tokens | Loss | Notes |
 |---|---|---|---|---|---|
 | smoke | train-tiny | 1 | 4.1K | 6.34 | ≈ ln(516)=6.25 ✓ sanity |
-| | | | | | |
+| bh-001 | train-tiny | 400 | 1.64M | 0.665 | val 0.661 / ppl 1.94 / next-token acc 0.728, 24s on T4 |
+
+bh-001 generation sample (prompt "The black hole"):
+
+> The black hole learns the curvature of space across the void of space.
+> The galaxy observes attention weights one layer at a time.

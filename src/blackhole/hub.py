@@ -48,7 +48,17 @@ def main(argv: list[str] | None = None) -> None:
 
     # weights (cpu, fp32 for portability)
     state = {k: v.detach().cpu().contiguous() for k, v in model.state_dict().items()}
+    # weight tying -> lm_head.weight and tok_emb.weight share memory; safetensors
+    # forbids duplicate storage, so save one copy and drop the tied key (loading with
+    # strict=False restores it, since both params point to the same tensor).
+    tied_dropped = []
+    if cfg.tie_weights and "lm_head.weight" in state and "tok_emb.weight" in state:
+        if state["lm_head.weight"].data_ptr() == state["tok_emb.weight"].data_ptr():
+            state.pop("lm_head.weight")
+            tied_dropped.append("lm_head.weight")
     save_file(state, str(out / "model.safetensors"))
+    if tied_dropped:
+        log.info(f"weight tying: dropped {tied_dropped} from safetensors (shares tok_emb)")
 
     cfg.save(out / "config.json")
     (out / "generation_config.json").write_text(json.dumps({
@@ -91,7 +101,8 @@ import json, torch
 cfg = BlackHoleConfig.from_dict(json.load(open("config.json")))
 model = BlackHole(cfg)
 from safetensors.torch import load_file
-model.load_state_dict(load_file("model.safetensors"))
+sd = load_file("model.safetensors")
+model.load_state_dict(sd, strict=False)  # lm_head tied to tok_emb -> omitted on purpose
 ```
 """)
 
