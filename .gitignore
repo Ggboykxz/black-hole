@@ -38,3 +38,4 @@ data/tokenized/
 
 # HF Hub export artifacts
 hub_export/
+.pytest_cache/
