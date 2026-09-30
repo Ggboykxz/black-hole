@@ -20,7 +20,11 @@
 - [x] 17/17 tests green (causality, shapes, grads, RoPE, GQA, round-trip)
 - [x] HF Hub export (`Ggboykxz/black-hole-tiny`) incl. tied-weight safetensors handling
 - [x] 20/20 tests green (+ checkpoint & safetensors round-trip, generation determinism)
-- [ ] Scale up: more data, bigger config, longer run
+- [x] Real corpus: FineWeb-Edu 4.2GB -> filtered/deduped -> 131.9M tokens train + 661k val
+- [x] Real BPE tokenizer, vocab 32000 (was 516 on synthetic data)
+- [x] fp16 AMP + fixed grad-accum loss logging (was 4x too high)
+- [x] Pretraining on 100M-param model (blackhole-small) launched
+- [ ] Scale up: more data, longer run, bigger config
 
 ## Notes / decisions
 
@@ -38,6 +42,9 @@
 |---|---|---|---|---|---|
 | smoke | train-tiny | 1 | 4.1K | 6.34 | ≈ ln(516)=6.25 ✓ sanity |
 | bh-001 | train-tiny | 400 | 1.64M | 0.665 | val 0.661 / ppl 1.94 / next-token acc 0.728, 24s on T4 |
+
+**bh-002 (en cours)** — vrai corpus FineWeb-Edu, 100M params, fp16, batch effectif 32x1024 :
+loss initiale 10.498 ≈ ln(32000)=10.37 ✓, val 6.18 @250 pas.
 
 bh-001 generation sample (prompt "The black hole"):
 
