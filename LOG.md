@@ -23,8 +23,9 @@
 - [x] Real corpus: FineWeb-Edu 4.2GB -> filtered/deduped -> 131.9M tokens train + 661k val
 - [x] Real BPE tokenizer, vocab 32000 (was 516 on synthetic data)
 - [x] fp16 AMP + fixed grad-accum loss logging (was 4x too high)
-- [x] Pretraining on 100M-param model (blackhole-small) launched
-- [ ] Scale up: more data, longer run, bigger config
+- [x] bh-002 pretraining COMPLETE: 100M params, 131M tokens, val ppl 54.7, acc 0.325
+- [x] Published Ggboykxz/black-hole-100m on the HF Hub
+- [ ] Next: more data (Chinchilla needs ~15 tok/param), then SFT, then DPO
 
 ## Notes / decisions
 
@@ -43,8 +44,26 @@
 | smoke | train-tiny | 1 | 4.1K | 6.34 | ≈ ln(516)=6.25 ✓ sanity |
 | bh-001 | train-tiny | 400 | 1.64M | 0.665 | val 0.661 / ppl 1.94 / next-token acc 0.728, 24s on T4 |
 
-**bh-002 (en cours)** — vrai corpus FineWeb-Edu, 100M params, fp16, batch effectif 32x1024 :
-loss initiale 10.498 ≈ ln(32000)=10.37 ✓, val 6.18 @250 pas.
+**bh-002 (TERMINÉ)** — vrai corpus FineWeb-Edu, 100M params, fp16, batch effectif 32x1024 :
+4000 steps, 131.07M tokens, 144.3 min, ~15.8k tok/s soutenus.
+
+| step | train loss | val loss | val ppl |
+|---|---|---|---|
+| 1 | 10.498 | — | — (≈ ln(32000)=10.37 ✓) |
+| 250 | 6.25 | 6.18 | 485 |
+| 500 | 5.49 | 5.46 | 235 |
+| 1000 | 4.80 | 4.83 | 126 |
+| 2000 | 4.22 | 4.32 | 75 |
+| 3000 | 4.03 | 4.08 | 59 |
+| 3750 | 3.93 | **3.98** (best) | 53.3 |
+| 4000 | 3.94 | 4.00 | 54.7 |
+
+Final eval (50 batches, 409,600 tokens): loss 4.0017 / ppl 54.69 / next-token acc 0.325
+(hypertheorique: 1/32000 = 0.000031 -> 10,400x better than chance).
+train/val gap = 0.06 -> **no overfitting** (131M tokens vs 100M params, ~1.3 tok/param,
+far below the Chinchilla-optimal 15 tok/param; the model is data-limited, not compute-limited).
+
+Published: https://huggingface.co/Ggboykxz/black-hole-100m
 
 bh-001 generation sample (prompt "The black hole"):
 
