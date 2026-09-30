@@ -192,6 +192,7 @@ def main(argv: list[str] | None = None) -> None:
             scaler.scale(loss).backward()
             step_loss += float(loss.detach()) * micro_total
             tokens_seen += x.numel()
+            throughput.update(x.numel())
 
         scaler.unscale_(optimizer)
         grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), train_cfg.grad_clip)
