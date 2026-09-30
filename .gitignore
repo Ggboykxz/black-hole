@@ -35,3 +35,6 @@ data/tokenized/
 .vscode/
 .DS_Store
 .ipynb_checkpoints/
+
+# HF Hub export artifacts
+hub_export/
